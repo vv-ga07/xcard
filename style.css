@@ -288,6 +288,16 @@ small {
     font-size: 18px;
 }
 
+.settings-info {
+    background: #e8f5fe;
+    border-left: 4px solid #1DA1F2;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    color: #333;
+    font-size: 14px;
+}
+
 .form-group.small {
     margin-bottom: 16px;
 }

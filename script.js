@@ -8,14 +8,65 @@ let githubSettings = {
     branch: 'main'
 };
 
+// URLからGitHub情報を自動検出
+function autoDetectGitHubSettings() {
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+    
+    // GitHub Pagesの場合: username.github.io/repo
+    if (hostname.endsWith('.github.io')) {
+        const parts = hostname.split('.');
+        if (parts.length >= 3) {
+            const username = parts[0];
+            const pathParts = pathname.split('/').filter(p => p);
+            const repo = pathParts[0] || '';
+            
+            return {
+                username: username,
+                repo: repo,
+                branch: 'main',
+                detected: true
+            };
+        }
+    }
+    
+    // カスタムドメインの場合はLocalStorageから読み込む
+    return null;
+}
+
 // LocalStorageから設定を読み込み
 function loadSettings() {
-    const saved = localStorage.getItem('githubSettings');
-    if (saved) {
-        githubSettings = JSON.parse(saved);
+    // まず自動検出を試みる
+    const autoDetected = autoDetectGitHubSettings();
+    
+    if (autoDetected) {
+        githubSettings = autoDetected;
+        console.log('✓ GitHub設定を自動検出しました:', githubSettings);
+        
+        // LocalStorageにも保存
+        localStorage.setItem('githubSettings', JSON.stringify(githubSettings));
+    } else {
+        // LocalStorageから読み込み
+        const saved = localStorage.getItem('githubSettings');
+        if (saved) {
+            githubSettings = JSON.parse(saved);
+        }
+    }
+    
+    // UIに反映
+    if (document.getElementById('githubUsername')) {
         document.getElementById('githubUsername').value = githubSettings.username || '';
         document.getElementById('githubRepo').value = githubSettings.repo || '';
         document.getElementById('githubBranch').value = githubSettings.branch || 'main';
+        
+        // 自動検出された場合は通知
+        if (autoDetected) {
+            const statusEl = document.getElementById('settingsStatus');
+            if (statusEl) {
+                statusEl.textContent = '✓ 自動検出: ' + githubSettings.username + '/' + githubSettings.repo;
+                statusEl.className = 'settings-status success';
+            }
+        }
     }
 }
 
@@ -39,6 +90,14 @@ function saveSettings() {
 
 // GitHub Pages URLを生成
 function generateGitHubPagesUrl(filename) {
+    const hostname = window.location.hostname;
+    
+    // カスタムドメインの場合
+    if (!hostname.endsWith('.github.io')) {
+        return `${window.location.protocol}//${hostname}/${filename}.html`;
+    }
+    
+    // GitHub Pagesの場合
     if (!githubSettings.username || !githubSettings.repo) {
         return `https://your-username.github.io/your-repo/${filename}.html`;
     }
